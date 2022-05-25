@@ -1,0 +1,24 @@
+<resources>
+    <!--
+    TODO: Before you run your application, you need a Google Maps API key.
+
+    To get one, follow this link, follow the directions and press "Create" at the end:
+
+    https://console.developers.google.com/flows/enableapi?apiid=maps_android_backend&keyType=CLIENT_SIDE_ANDROID&r=6F:2C:4A:61:87:56:E4:1F:13:90:3A:EE:3C:DF:44:91:2C:6E:0D:E2%3Bcom.example.androidappforiot
+
+    You can also add your credentials to an existing key, using these values:
+
+    Package name:
+    com.example.androidappforiot
+
+    SHA-1 certificate fingerprint:
+    6F:2C:4A:61:87:56:E4:1F:13:90:3A:EE:3C:DF:44:91:2C:6E:0D:E2
+
+    Alternatively, follow the directions here:
+    https://developers.google.com/maps/documentation/android/start#get-key
+
+    Once you have your key (it starts with "AIza"), replace the "google_maps_key"
+    string in this file.
+    -->
+    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">YOUR_KEY_HERE</string>
+</resources>
