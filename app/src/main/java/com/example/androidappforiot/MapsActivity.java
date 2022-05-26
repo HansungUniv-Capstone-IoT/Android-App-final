@@ -4,13 +4,10 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 
 import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.widget.TextView;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.Toast;
 
-import com.example.androidappforiot.entity.MarkerItem;
-import com.example.androidappforiot.ui.apicall.RestAPITask;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -26,26 +23,28 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.NumberFormat;
 
 /**
  * 참고자료
  * api 호출 : https://jbin0512.tistory.com/118
- * */
+ */
 
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback , GoogleMap.OnMarkerClickListener {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
     private GoogleMap mMap;
     private ActivityMapsBinding binding;
-    View marker_root_view;
+//    View marker_root_view;
 
-    TextView tv_marker;
+//    TextView tv_marker;
 
 
     @Override
@@ -71,7 +70,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // 쓰레기통 위치들 받아오기
 //        String idm = String.valueOf(new RestAPITask("https://907epdyfgc.execute-api.ap-northeast-2.amazonaws.com/prod/trash").execute());
 
-        new Thread(){
+        new Thread() {
             @Override
             public void run() {
 
@@ -109,20 +108,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         double latitude = Double.parseDouble(temp.getString("latitude"));
                         double longitude = Double.parseDouble(temp.getString("longitude"));
                         String name = temp.getString("name");
-
-                        MarkerItem markerItem = new MarkerItem(latitude, longitude, name);
+                        double id = Double.parseDouble(temp.getString("id"));
+                        int intId = (int) id;
+//                        MarkerItem markerItem = new MarkerItem(latitude, longitude, name);
 
 //                        items.add(movieNm);
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
 
-                                String formatted = NumberFormat.getCurrencyInstance().format((name));
-                                tv_marker.setText(formatted);
+//                                String formatted = NumberFormat.getCurrencyInstance().format((name));
+//                                tv_marker.setText(formatted);
 
                                 LatLng position = new LatLng(latitude, longitude);
 
-                                mMap.addMarker(new MarkerOptions().position(position).title(name));
+                                mMap.addMarker(
+                                        new MarkerOptions()
+                                                .position(position)
+                                                .title(name)
+                                                .snippet(String.valueOf(intId)));
+
 
                             }
                         });
@@ -149,21 +154,110 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
          *  15 : 거리
          *  20 : 건물
          *  */
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(startMakrer,17));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(startMakrer, 17));
+
     }
 
 
     @Override
     public boolean onMarkerClick(@NonNull Marker marker) {
+        String id = marker.getSnippet();
+        int idd = Integer.parseInt(id);
+
+        new Thread() {
+            @Override
+            public void run() {
+
+                String urlAddress = "https://907epdyfgc.execute-api.ap-northeast-2.amazonaws.com/prod/trash/shadow";
+                StringBuffer sbParams = new StringBuffer();
+
+                try {
+                    URL url = new URL(urlAddress);
+                    HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
+
+                    // [2-1]. urlConn 설정.
+                    urlConn.setConnectTimeout(15000);
+                    urlConn.setReadTimeout(5000);
+                    urlConn.setDoInput(true);
+                    urlConn.setDoOutput(true);
+                    urlConn.setUseCaches(false);
+                    urlConn.setRequestMethod("POST"); // URL 요청에 대한 메소드 설정 : POST.
+                    urlConn.setRequestProperty("Accept","application/json"); // Accept-Charset 설정.
+                    urlConn.setRequestProperty("Content-Type","applicaiton/json;utf-8");
+//                    urlConn.setRequestProperty("apikey", ""); // ""안에 apikey를 입력
+                    urlConn.setDoOutput(true);
+
+                    // Json 전송
+                    JSONObject jsonObject = new JSONObject();
+                    jsonObject.put("id",idd);
+
+                    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(urlConn.getOutputStream()));
+                    bw.write(jsonObject.toString());
+                    bw.flush();
+                    bw.close();
+
+                    // 서버 응답
+                    BufferedReader in = new BufferedReader(new InputStreamReader(urlConn.getInputStream()));
+                    String returnMsg = in.readLine();
+                    System.out.println("응답메시지: " + returnMsg);
+
+                    // 스레드에서 Toast 메시지 띄울 때
+                    Handler handler = new Handler(Looper.getMainLooper());
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            Toast.makeText(getApplicationContext(), returnMsg,Toast.LENGTH_LONG);
+
+                        }
+                    }, 0);
+
+                    // [2-2]. parameter 전달 및 데이터 읽어오기.
+//                    String strParams = sbParams.toString(); //sbParams에 정리한 파라미터들을 스트링으로 저장. 예)id=id1&pw=123;
+//                    OutputStream os = urlConn.getOutputStream();
+//                    os.write(strParams.getBytes("UTF-8")); // 출력 스트림에 출력.
+//                    os.flush(); // 출력 스트림을 플러시(비운다)하고 버퍼링 된 모든 출력 바이트를 강제 실행.
+//                    os.close(); // 출력 스트림을 닫고 모든 시스템 자원을 해제.
+
+                    // [2-3]. 연결 요청 확인.
+                    // 실패 시 null을 리턴하고 메서드를 종료.
+//                    if (urlConn.getResponseCode() != HttpURLConnection.HTTP_OK)
+//                        System.out.println("연결 실패");
+//
+//                    // [2-4]. 읽어온 결과물 리턴.
+//                    // 요청한 URL의 출력물을 BufferedReader로 받는다.
+//                    BufferedReader reader = new BufferedReader(new InputStreamReader(urlConn.getInputStream(), "UTF-8"));
+//
+//                    // 출력물의 라인과 그 합에 대한 변수.
+//                    String line;
+//                    String page = "";
+//
+//                    // 라인을 받아와 합친다.
+//                    while ((line = reader.readLine()) != null){
+//                        page += line;
+//                    }
+//
+////                    return page;
+
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }.start();
         CameraUpdate center = CameraUpdateFactory.newLatLng(marker.getPosition());
+
         mMap.animateCamera(center);
-
-        //changeSelectedMarker(marker);
-
+        marker.showInfoWindow(); // 정보 창 열기
+        //
+//        changeSelectedMarker(marker);
+//
         return true;
 
     }
-
 
 
 }
