@@ -2,10 +2,16 @@
 buildscript {
     repositories {
         google()
-        mavenCentral()
+        jcenter()
+        maven { url "https://maven.google.com" }
+        //[출처] 안드로이드 - 원형,막대 차트, 그래프 구현하기|작성자 길상
+
+
     }
     dependencies {
         classpath "com.android.tools.build:gradle:7.0.3"
+        classpath 'com.google.gms:google-services:4.3.2'
+//        [출처] 안드로이드 - 원형,막대 차트, 그래프 구현하기|작성자 길상
         classpath "com.google.android.libraries.mapsplatform.secrets-gradle-plugin:secrets-gradle-plugin:2.0.0"
 
         // NOTE: Do not place your application dependencies here; they belong
